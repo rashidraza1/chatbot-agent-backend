@@ -1,4 +1,4 @@
-(function() {
+(function () {
   var botId = document.currentScript.getAttribute('data-bot-id');
   if (!botId) {
     console.error('ChatWidget: Missing data-bot-id attribute on script tag.');
@@ -25,7 +25,7 @@
   var iframe = document.createElement('iframe');
   // Pass the current page URL to the iframe so the bot knows where the visitor is
   var currentUrl = encodeURIComponent(window.location.href);
-  iframe.src = 'http://localhost:3000/widget/' + botId + '?url=' + currentUrl;
+  iframe.src = 'https://chatbot-frontend-xi-ashy.vercel.app/widget/' + botId + '?url=' + currentUrl;
   iframe.style.width = '100%';
   iframe.style.height = '100%';
   iframe.style.border = 'none';
@@ -37,8 +37,8 @@
   document.body.appendChild(container);
 
   // Listen for messages from iframe to resize container
-  window.addEventListener('message', function(event) {
-    if (event.origin !== 'http://localhost:3000') return;
+  window.addEventListener('message', function (event) {
+    if (event.origin !== 'https://chatbot-frontend-xi-ashy.vercel.app') return;
 
     if (event.data === 'chatdesk-minimize') {
       container.style.width = '80px';
