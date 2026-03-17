@@ -47,7 +47,7 @@ app.use('/api/bots', require('./routes/botRoutes'));
 app.use('/api/conversations', require('./routes/conversationRoutes'));
 
 // Database Sync and Server Start
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 sequelize.sync({ alter: true }).then(() => {
   console.log('Database connected and synced');
