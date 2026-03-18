@@ -21,8 +21,10 @@
     "helmet": "^8.1.0",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
     "mysql2": "^3.20.0",
     "openai": "^6.29.0",
+    "pdf-parse": "^1.1.1",
     "sequelize": "^6.37.8",
     "socket.io": "^4.8.3"
   }

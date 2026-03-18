@@ -1,5 +1,6 @@
 const { Conversation, Message, Bot, Visitor, User } = require('../models');
 const { generateBotResponse } = require('../services/openaiService');
+const { searchRelevantChunks } = require('../services/pdfService');
 
 module.exports = (io, socket) => {
   console.log('New client connected:', socket.id);
@@ -79,7 +80,12 @@ module.exports = (io, socket) => {
 
           setTimeout(async () => {
              try {
-               const responseContent = await generateBotResponse(conversation.Bot, content, conversation.Bot.faqs);
+               // 1. Perform RAG Search against PDFs
+               const ragContext = await searchRelevantChunks(conversation.Bot.id, content, 3);
+               console.log(`Found ${ragContext.length} relevant PDF chunks for the query.`);
+
+               // 2. Generate response with context
+               const responseContent = await generateBotResponse(conversation.Bot, content, conversation.Bot.faqs, ragContext);
                console.log('Generated bot response:', responseContent);
 
                const botMessage = await Message.create({

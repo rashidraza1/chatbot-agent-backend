@@ -45,6 +45,7 @@ app.get('/health', (req, res) => res.status(200).json({ status: 'OK' }));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/bots', require('./routes/botRoutes'));
 app.use('/api/conversations', require('./routes/conversationRoutes'));
+app.use('/api/pdfs', require('./routes/pdfRoutes')); // Added PDF routes
 
 // Database Sync and Server Start
 const PORT = process.env.PORT || 10000;

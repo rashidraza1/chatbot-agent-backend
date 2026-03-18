@@ -25,6 +25,7 @@
   var iframe = document.createElement('iframe');
   // Pass the current page URL to the iframe so the bot knows where the visitor is
   var currentUrl = encodeURIComponent(window.location.href);
+  //iframe.src = 'http://localhost:3000/widget/' + botId + '?url=' + currentUrl;
   iframe.src = 'https://chatbot-frontend-xi-ashy.vercel.app/widget/' + botId + '?url=' + currentUrl;
   iframe.style.width = '100%';
   iframe.style.height = '100%';
@@ -38,6 +39,7 @@
 
   // Listen for messages from iframe to resize container
   window.addEventListener('message', function (event) {
+    //if (event.origin !== 'http://localhost:3000') return;
     if (event.origin !== 'https://chatbot-frontend-xi-ashy.vercel.app') return;
 
     if (event.data === 'chatdesk-minimize') {

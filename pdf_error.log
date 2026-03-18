@@ -1,0 +1,4 @@
+2026-03-18T06:18:52.944Z | PDF ID: 2 | Error: TypeError: pdfParse is not a function
+    at exports.processPdf (F:\Rashid\ReactJS\chatbot\backend\services\pdfService.js:34:24)
+    at [eval]:1:139
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
