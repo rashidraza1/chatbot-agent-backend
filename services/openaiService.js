@@ -43,3 +43,17 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [])
     return "I'm having trouble connecting right now. Let me hand you over to a human agent.";
   }
 };
+
+exports.generateChatTitle = async (botId, firstMessage) => {
+  try {
+    const prompt = `Generate a short title (maximum 5 to 7 words) for a chat conversation that starts with the following message:\n\n"${firstMessage}"\n\nTitle clearly:`;
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }]
+    });
+    return completion.choices[0].message.content.replace(/["']/g, "").trim();
+  } catch (err) {
+    console.error('Failed to generate chat title:', err);
+    return 'New Chat';
+  }
+};

@@ -15,8 +15,11 @@ Bot.belongsTo(User, { foreignKey: 'user_id' });
 Bot.hasMany(Conversation, { foreignKey: 'bot_id' });
 Conversation.belongsTo(Bot, { foreignKey: 'bot_id' });
 
-Visitor.hasMany(Conversation, { foreignKey: 'visitor_id' });
-Conversation.belongsTo(Visitor, { foreignKey: 'visitor_id' });
+Visitor.hasMany(Conversation, { foreignKey: 'visitor_id', constraints: false });
+Conversation.belongsTo(Visitor, { foreignKey: 'visitor_id', constraints: false });
+
+User.hasMany(Conversation, { foreignKey: 'user_id', constraints: false });
+Conversation.belongsTo(User, { foreignKey: 'user_id', constraints: false });
 
 Conversation.hasMany(Message, { foreignKey: 'conversation_id' });
 Message.belongsTo(Conversation, { foreignKey: 'conversation_id' });

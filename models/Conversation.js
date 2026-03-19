@@ -13,7 +13,15 @@ const Conversation = sequelize.define('Conversation', {
   },
   visitor_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
+  },
+  user_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  title: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   status: {
     type: DataTypes.ENUM('active', 'closed', 'human_handover'),

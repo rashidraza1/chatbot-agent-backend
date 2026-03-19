@@ -16,7 +16,7 @@ const Message = sequelize.define('Message', {
     allowNull: false,
   },
   sender_id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING,
     allowNull: true, // Nullable for visitor or bot if id isn't explicitly defined
   },
   content: {
