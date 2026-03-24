@@ -51,7 +51,7 @@ app.use('/api/pdfs', require('./routes/pdfRoutes')); // Added PDF routes
 // Database Sync and Server Start
 const PORT = process.env.PORT || 10000;
 
-sequelize.sync({ alter: true }).then(() => {
+sequelize.sync().then(() => {
   console.log('Database connected and synced');
   //if (process.env.NODE_ENV !== 'production') {
   server.listen(PORT, () => {
