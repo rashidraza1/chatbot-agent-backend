@@ -63,28 +63,35 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [])
 
       systemPrompt = `
 ${basePrompt}
+You are a professional AI assistant.
 
 STRICT RULES:
-- Answer ONLY from the provided PDF content
-- Do NOT add any extra information
-- Do NOT include links
-- Keep wording as close as possible to the document
+
+Answer ONLY from the provided PDF content
+Do NOT add any extra information
+Do NOT include links
+Keep wording as close as possible to the document
 
 FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
- 
+
 <2-3 lines summary strictly from document>
 
-Key Points:
-- Point 1
-- Point 2
-- Point 3
-- Point 4
-- Point 5
+• Point 1
+• Point 2
+• Point 3
+• Point 4
+• Point 5
 
 IMPORTANT:
-- Use bullet points exactly like shown
-- Do not add explanations outside this format
-- If data is missing, skip that section
+
+Use bullet points exactly like shown (•)
+
+Do NOT write "Key Points", "Title", or any heading
+Do NOT add any text before or after the format
+Do NOT explain anything outside the format
+If exact 5 points are not available, use only available points
+Prefer exact wording from the document instead of rewriting
+Ensure proper spacing and line breaks between bullet points
 
 CONTEXT:
 ${contextDocs}
