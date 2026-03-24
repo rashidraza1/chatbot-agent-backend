@@ -35,6 +35,10 @@ const Bot = sequelize.define('Bot', {
   faqs: {
     type: DataTypes.JSON,
     defaultValue: []
+  },
+  prompt: {
+    type: DataTypes.TEXT,
+    allowNull: true,
   }
 }, {
   timestamps: true,

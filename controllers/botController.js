@@ -12,8 +12,9 @@ const botSchema = Joi.object({
       question: Joi.string().required(),
       answer: Joi.string().required()
     })
-  ).allow(null)
-});
+  ).allow(null),
+  prompt: Joi.string().allow('', null)
+}).unknown(true); // Allow other fields to avoid strict "not allowed" errors for metadata
 
 exports.createBot = async (req, res) => {
   try {
@@ -80,7 +81,7 @@ exports.deleteBot = async (req, res) => {
 exports.getWidgetBotConfig = async (req, res) => {
   try {
     const bot = await Bot.findByPk(req.params.id, {
-      attributes: ['id', 'name', 'avatar_url', 'color_theme', 'welcome_message', 'use_ai', 'faqs']
+      attributes: ['id', 'name', 'avatar_url', 'color_theme', 'welcome_message', 'use_ai', 'faqs', 'prompt']
     });
     if (!bot) return res.status(404).json({ message: 'Bot not found' });
     res.json(bot);

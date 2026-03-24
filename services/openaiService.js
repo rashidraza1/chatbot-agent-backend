@@ -26,7 +26,10 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [])
     }
 
     // 3. Fallback to OpenAI
-    const systemPrompt = `You are an AI assistant for a website. Your name is ${bot.name}. Be helpful, polite, and concise.${contextString}`;
+    const defaultPrompt = "You are a helpful customer support assistant. Answer clearly and politely.";
+    const basePrompt = bot.prompt || defaultPrompt;
+    
+    const systemPrompt = `${basePrompt}\n\nYour name is ${bot.name}. Be helpful, polite, and concise.${contextString}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
