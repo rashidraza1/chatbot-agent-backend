@@ -21,8 +21,6 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [])
     const defaultPrompt = "You are a helpful customer support assistant. Answer clearly and politely.";
     const basePrompt = bot.prompt || defaultPrompt;
 
-    console.log("base Promt", basePrompt)
-
     //     if (ragContext && ragContext.length > 0) {
     //       const contextDocs = ragContext.map(r => r.content).join("\n\n---\n\n");
     //       systemPrompt = `You are a professional AI assistant.
@@ -73,11 +71,7 @@ STRICT RULES:
 - Keep wording as close as possible to the document
 
 FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
-
-Title:
-<Main heading from the document>
-
-Description:
+ 
 <2-3 lines summary strictly from document>
 
 Key Points:
@@ -86,9 +80,6 @@ Key Points:
 - Point 3
 - Point 4
 - Point 5
-
-Keywords:
-<comma separated keywords from document if available>
 
 IMPORTANT:
 - Use bullet points exactly like shown
@@ -108,10 +99,8 @@ ${contextDocs}
       systemPrompt = `${basePrompt}\n\nYour name is ${bot.name}. Be helpful, polite, and concise.${contextString}`;
     }
 
-    console.log("systemPrompt", systemPrompt)
-
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: visitorMessage }
@@ -130,7 +119,7 @@ exports.generateChatTitle = async (botId, firstMessage) => {
   try {
     const prompt = `Generate a short title (maximum 5 to 7 words) for a chat conversation that starts with the following message:\n\n"${firstMessage}"\n\nTitle clearly:`;
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }]
     });
     return completion.choices[0].message.content.replace(/["']/g, "").trim();
