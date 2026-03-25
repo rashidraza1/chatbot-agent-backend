@@ -76,21 +76,22 @@ FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
 
 <2-3 lines summary strictly from document>
 
-• Point 1
-• Point 2
-• Point 3
-• Point 4
-• Point 5
+• **Point 1**
+• **Point 2**
+• **Point 3**
+• **Point 4**
+• **Point 5**
 
 IMPORTANT:
 
 Use bullet points exactly like shown (•)
-Every bullet point MUST be fully bold using ** **
+Bold ONLY the text of the key points using ** ** (e.g., • **Key Point Text**)
 Do NOT write "Key Points", "Title", or any heading
 Do NOT add any text before or after the format
 Do NOT explain anything outside the format
+Do NOT include any greeting like "Welcome to Rsi concepts" or "I am here to help you learn about products and services"
 If exact 5 points are not available, use only available points
-Prefer exact wording from the document instead of rewriting
+Use the EXACT wording from the document for both the summary and the points. Do NOT paraphrase, summarize, or rewrite.
 Ensure proper spacing and line breaks between bullet points
 
 CONTEXT:
@@ -103,7 +104,8 @@ ${contextDocs}
       if (faqs && faqs.length > 0) {
         contextString = `\nHere is some information you should know and use to answer questions: ${JSON.stringify(faqs)}`;
       }
-      systemPrompt = `${basePrompt}\n\nYour name is ${bot.name}. Be helpful, polite, and concise.${contextString}`;
+      systemPrompt = `${basePrompt}\n\nYour name is ${bot.name}. Be helpful, polite, and concise. 
+IMPORTANT: NEVER include the statement "Welcome to Rsi concepts. I am here to help you learn about products and services and solution." or any similar greeting.${contextString}`;
     }
 
     const completion = await openai.chat.completions.create({
@@ -114,7 +116,13 @@ ${contextDocs}
       ]
     });
 
-    return completion.choices[0].message.content;
+    let finalResponse = completion.choices[0].message.content;
+
+    // Remove the unwanted statement if present (extremely flexible regex for variations in punctuation, plurals, and wording)
+    const unwantedStatement = /Welcome to Rsi concepts[.!]? I am (here )?to help you learn about products and services (and )?solutions?[.!]?/gi;
+    finalResponse = finalResponse.replace(unwantedStatement, "").trim();
+
+    return finalResponse;
 
   } catch (error) {
     console.error('OpenAI Error:', error);
