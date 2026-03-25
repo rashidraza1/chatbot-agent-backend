@@ -49,8 +49,31 @@ exports.processChat = async (req, res) => {
        // 1. Perform RAG Search against PDFs
        const ragContext = await searchRelevantChunks(conversation.Bot.id, content, 3);
        
-       // 2. Generate response with context
-       const responseContent = await generateBotResponse(conversation.Bot, content, conversation.Bot.faqs || [], ragContext);
+       // 2. Fetch recent conversation history (last 10 messages)
+       const previousMessages = await Message.findAll({
+         where: { conversation_id: conversation.id },
+         order: [['createdAt', 'DESC']],
+         limit: 11 // Include current user message which was just saved
+       });
+
+       // Reverse to get chronological order and format for OpenAI
+       // We skip the first one because it's the current message we just saved above
+       const history = previousMessages
+         .slice(1)
+         .reverse()
+         .map(msg => ({
+           role: msg.sender_type === 'visitor' ? 'user' : 'assistant',
+           content: msg.content
+         }));
+
+       // 3. Generate response with context and history
+       const responseContent = await generateBotResponse(
+         conversation.Bot, 
+         content, 
+         conversation.Bot.faqs || [], 
+         ragContext,
+         history
+       );
 
        const botMessage = await Message.create({
          conversation_id: conversation.id,
