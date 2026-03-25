@@ -85,7 +85,7 @@ FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
 IMPORTANT:
 
 Use bullet points exactly like shown (•)
-
+Every bullet point MUST be fully bold using ** **
 Do NOT write "Key Points", "Title", or any heading
 Do NOT add any text before or after the format
 Do NOT explain anything outside the format
