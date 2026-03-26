@@ -6,6 +6,15 @@ const openai = new OpenAI({
 
 exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [], history = []) => {
   try {
+
+    const pureGreetings = ["hi", "hello", "hey", "hey there", "hi there",
+      "good morning", "good afternoon", "good evening", "good night",
+      "greetings", "salam", "assalamualaikum", "namaste",
+      "what's up", "whats up", "yo", "bye", "goodbye", "see you", "see you soon", "see you later", "see you tomorrow", "see you next time", "see you again", "see you soon", "see you later", "see you tomorrow", "see you next time", "see you again"];
+    const trimmedMsg = visitorMessage.trim();
+    if (pureGreetings.includes(trimmedMsg.toLowerCase())) {
+      return `${trimmedMsg}, I’m here to help you learn about RSI Concepts and its products, services, and solutions. Please let me know what specific information you are looking for, and I will be happy to guide you.`;
+    }
     // 1. Check if an FAQ matches directly
     if (faqs && Array.isArray(faqs)) {
       const match = faqs.find(faq => faq.question.toLowerCase() === visitorMessage.toLowerCase());
@@ -39,23 +48,24 @@ FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
 
 <2-3 lines summary strictly from document>
 
-• **Point 1**
-• **Point 2**
-• **Point 3**
-• **Point 4**
-• **Point 5**
+1) **Point 1**
+2) **Point 2**
+3) **Point 3**
+4) **Point 4**
+5) **Point 5**
 
 IMPORTANT:
 
-Use bullet points exactly like shown (•)
-Bold ONLY the text of the key points using ** ** (e.g., • **Key Point Text**)
+Use numbered lists exactly like shown (1), 2), etc.)
+Bold ONLY the text of the key points using ** ** (e.g., 1) **Key Point Text**)
 Do NOT write "Key Points", "Title", or any heading
 Do NOT add any text before or after the format
 Do NOT explain anything outside the format
 Do NOT include any greeting like "Welcome to Rsi concepts" or "I am here to help you learn about products and services"
 If exact 5 points are not available, use only available points
 Use the EXACT wording from the document for both the summary and the points. Do NOT paraphrase, summarize, or rewrite.
-Ensure proper spacing and line breaks between bullet points
+Ensure proper spacing and line breaks between numbered points
+Ensure there is a newline between each numbered point
 
 CONTEXT:
 ${contextDocs}

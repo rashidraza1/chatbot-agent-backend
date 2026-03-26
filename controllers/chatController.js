@@ -45,6 +45,9 @@ exports.processChat = async (req, res) => {
       content
     });
 
+    // Touch conversation to update updatedAt
+    await conversation.update({ updatedAt: new Date() });
+
     if (conversation.status === 'active') {
        // 1. Perform RAG Search against PDFs
        const ragContext = await searchRelevantChunks(conversation.Bot.id, content, 3);
@@ -80,6 +83,9 @@ exports.processChat = async (req, res) => {
          sender_type: 'bot',
          content: responseContent
        });
+
+       // Touch conversation to update updatedAt
+       await conversation.update({ updatedAt: new Date() });
 
        return res.status(200).json({
          conversation_id: conversation.id,

@@ -63,6 +63,9 @@ module.exports = (io, socket) => {
         content
       });
 
+      // Touch conversation to update updatedAt
+      await Conversation.update({ updatedAt: new Date() }, { where: { id: conversationId } });
+
       console.log('Message saved to DB, broadcasting to room:', `conversation_${conversationId}`);
       io.to(`conversation_${conversationId}`).emit('new_message', message);
 
@@ -93,6 +96,9 @@ module.exports = (io, socket) => {
                  sender_type: 'bot',
                  content: responseContent
                });
+
+               // Touch conversation to update updatedAt
+               await Conversation.update({ updatedAt: new Date() }, { where: { id: conversationId } });
 
                io.to(`conversation_${conversationId}`).emit('bot_typing', false);
                io.to(`conversation_${conversationId}`).emit('new_message', botMessage);
