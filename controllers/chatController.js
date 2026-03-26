@@ -46,53 +46,64 @@ exports.processChat = async (req, res) => {
     });
 
     // Touch conversation to update updatedAt
-    await conversation.update({ updatedAt: new Date() });
+    //await conversation.update({ updatedAt: new Date() });
 
     if (conversation.status === 'active') {
-       // 1. Perform RAG Search against PDFs
-       const ragContext = await searchRelevantChunks(conversation.Bot.id, content, 3);
-       
-       // 2. Fetch recent conversation history (last 10 messages)
-       const previousMessages = await Message.findAll({
-         where: { conversation_id: conversation.id },
-         order: [['createdAt', 'DESC']],
-         limit: 11 // Include current user message which was just saved
-       });
+      // 1. Perform RAG Search against PDFs
+      const ragContext = await searchRelevantChunks(conversation.Bot.id, content, 3);
 
-       // Reverse to get chronological order and format for OpenAI
-       // We skip the first one because it's the current message we just saved above
-       const history = previousMessages
-         .slice(1)
-         .reverse()
-         .map(msg => ({
-           role: msg.sender_type === 'visitor' ? 'user' : 'assistant',
-           content: msg.content
-         }));
+      // 2. Fetch recent conversation history (last 10 messages)
+      const previousMessages = await Message.findAll({
+        where: { conversation_id: conversation.id },
+        order: [['createdAt', 'DESC']],
+        limit: 11 // Include current user message which was just saved
+      });
 
-       // 3. Generate response with context and history
-       const responseContent = await generateBotResponse(
-         conversation.Bot, 
-         content, 
-         conversation.Bot.faqs || [], 
-         ragContext,
-         history
-       );
+      // Reverse to get chronological order and format for OpenAI
+      // We skip the first one because it's the current message we just saved above
+      const history = previousMessages
+        .slice(1)
+        .reverse()
+        .map(msg => ({
+          role: msg.sender_type === 'visitor' ? 'user' : 'assistant',
+          content: msg.content
+        }));
 
-       const botMessage = await Message.create({
-         conversation_id: conversation.id,
-         sender_type: 'bot',
-         content: responseContent
-       });
+      // 3. Generate response with context and history
+      const responseContent = await generateBotResponse(
+        conversation.Bot,
+        content,
+        conversation.Bot.faqs || [],
+        ragContext,
+        history
+      );
 
-       // Touch conversation to update updatedAt
-       await conversation.update({ updatedAt: new Date() });
+      const botMessage = await Message.create({
+        conversation_id: conversation.id,
+        sender_type: 'bot',
+        content: responseContent
+      });
 
-       return res.status(200).json({
-         conversation_id: conversation.id,
-         title: conversation.title,
-         userMessage,
-         botMessage
-       });
+      // Touch conversation to update updatedAt
+      // await conversation.update({ updatedAt: new Date() });
+
+      await Conversation.update(
+        { status: conversation.status }, // 👈 dummy/no-change update
+        { where: { id: conversation.id } }
+      );
+
+      //console.log('Bot  conversation:', conversation);
+
+      const updated = await Conversation.findByPk(conversation.id);
+      console.log("NEW updatedAt:", updated.updatedAt);
+
+
+      return res.status(200).json({
+        conversation_id: conversation.id,
+        title: conversation.title,
+        userMessage,
+        botMessage
+      });
     } else {
       return res.status(200).json({
         conversation_id: conversation.id,
@@ -131,9 +142,9 @@ exports.getConversationMessages = async (req, res) => {
       where: { conversation_id: id },
       order: [['createdAt', 'ASC']]
     });
-    
+
     const conversation = await Conversation.findByPk(id);
-    
+
     res.json({ conversation, messages });
   } catch (error) {
     console.error('Error fetching messages:', error);
