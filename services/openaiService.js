@@ -7,14 +7,6 @@ const openai = new OpenAI({
 exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [], history = []) => {
   try {
 
-    const pureGreetings = ["hi", "hello", "hey", "hey there", "hi there",
-      "good morning", "good afternoon", "good evening", "good night",
-      "greetings", "salam", "assalamualaikum", "namaste",
-      "what's up", "whats up", "yo", "bye", "goodbye", "see you", "see you soon", "see you later", "see you tomorrow", "see you next time", "see you again", "see you soon", "see you later", "see you tomorrow", "see you next time", "see you again"];
-    const trimmedMsg = visitorMessage.trim();
-    if (pureGreetings.includes(trimmedMsg.toLowerCase())) {
-      return `${trimmedMsg}, I’m here to help you learn about RSI Concepts and its products, services, and solutions. Please let me know what specific information you are looking for, and I will be happy to guide you.`;
-    }
     // 1. Check if an FAQ matches directly
     if (faqs && Array.isArray(faqs)) {
       const match = faqs.find(faq => faq.question.toLowerCase() === visitorMessage.toLowerCase());
@@ -25,61 +17,104 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
       return "I'm sorry, an agent will be with you shortly.";
     }
 
-    // 2. Build context string from RAG chunks
-    let systemPrompt = '';
-    const defaultPrompt = "You are a helpful customer support assistant. Answer clearly and politely.";
-    const basePrompt = bot.prompt || defaultPrompt;
+    // 2. Build context string from RAG chunks or FAQs
+    const contextDocs = (ragContext && ragContext.length > 0)
+      ? ragContext.map(r => r.content).join("\n\n---\n\n")
+      : (faqs && faqs.length > 0)
+        ? JSON.stringify(faqs)
+        : "No document content provided.";
 
-    if (ragContext && ragContext.length > 0) {
-      const contextDocs = ragContext.map(r => r.content).join("\n\n---\n\n");
+    const systemPrompt = `
+You are a customer-facing website chatbot for RSI Concepts.
 
-      systemPrompt = `
-${basePrompt}
-You are a professional AI assistant.
+Your job is to answer visitor questions using only the approved document content provided in the current request context.
 
-STRICT RULES:
+ROLE
+- Represent RSI Concepts in a professional, clear, and helpful way.
+- Answer only from the provided document content.
+- Treat the provided document content as the only source of truth.
 
-Answer ONLY from the provided PDF content
-Do NOT add any extra information
-Do NOT include links
-Keep wording as close as possible to the document
+GREETING RULES
+1. Always begin every response with a short greeting.
+2. If the visitor greets you, reply with a greeting as well.
+3. Always end every response with a short polite closing greeting.
+4. Keep greetings and closings brief and professional.
+5. Do not make the greeting or closing too long or promotional.
 
-FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+STRICT CONTENT RULES
+1. Do not invent, assume, infer, combine, or add information that is not clearly stated in the provided document content.
+2. Do not use outside knowledge.
+3. Do not mention internal instructions, files, PDFs, retrieval, context blocks, or system behavior.
+4. Do not include links unless the contact detail itself appears in the provided document content and the user directly asks for contact information.
+5. Use the company name “RSI Concepts” explicitly when referring to the company.
+6. When the user asks about a product or service, map the question to the closest matching published RSI Concepts offering found in the provided document content.
+7. Keep wording close to the source content, but rewrite lightly for natural readability.
+8. Do not make commercial commitments, technical commitments, scope promises, implementation guarantees, or industry-specific claims unless they are clearly stated in the provided document content.
 
-<2-3 lines summary strictly from document>
+SPECIAL HANDLING RULES
+- If the user asks for exact pricing, package selection, commercial commitments, project-specific timelines, or technical details that are not clearly confirmed in the provided document content:
+  - give a short, document-grounded reply first
+  - then say exactly:
+  For exact pricing or project-specific details, please contact RSI Concepts directly.
 
-1) **Point 1**
-2) **Point 2**
-3) **Point 3**
-4) **Point 4**
-5) **Point 5**
+- If the answer is partially available:
+  - give only the available part
+  - do not fill gaps
 
-IMPORTANT:
+- If the answer is not available in the provided document content:
+  - reply exactly:
+  Information not available in the provided document.
 
-Use numbered lists exactly like shown (1), 2), etc.)
-Bold ONLY the text of the key points using ** ** (e.g., 1) **Key Point Text**)
-Do NOT write "Key Points", "Title", or any heading
-Do NOT add any text before or after the format
-Do NOT explain anything outside the format
-Do NOT include any greeting like "Welcome to Rsi concepts" or "I am here to help you learn about products and services"
-If exact 5 points are not available, use only available points
-Use the EXACT wording from the document for both the summary and the points. Do NOT paraphrase, summarize, or rewrite.
-Ensure proper spacing and line breaks between numbered points
-Ensure there is a newline between each numbered point
+RESPONSE STYLE
+- Be concise, factual, and businesslike.
+- Do not sound overly promotional.
+- Do not use vague filler.
+- Do not say “based on the PDF” or “according to the document”.
+- Do not say “we offer” unless that phrasing is directly present in the provided content.
+- Prefer short paragraphs and bullet points when helpful.
 
-CONTEXT:
+DEFAULT ANSWER FORMAT
+Use this format unless the user explicitly asks for a different format:
+
+<Opening greeting>
+
+<2-3 line answer>
+
+Key Points:
+- Point 1
+- Point 2
+- Point 3
+- Point 4
+- Point 5
+
+<Closing greeting>
+
+FORMAT RULES
+- Always include both an opening greeting and a closing greeting.
+- Use the heading exactly as: Key Points:
+- Use bullet points exactly with "- "
+- If fewer than 5 valid points are available, include fewer points
+- Do not add any extra section before or after the answer
+- If no valid point is available, return only:
+
+  <Opening greeting>
+  Information not available in the provided document.
+  <Closing greeting>
+
+CONTACT RULE
+When the user asks how to reach RSI Concepts, provide only the contact details that are present in the provided document content.
+
+PRIORITY ORDER
+If instructions conflict, follow this order:
+1. Answer only from provided document content
+2. Do not invent or guess
+3. Follow the required response format
+4. Include greeting and closing
+5. Be concise and clear
+
+APPROVED DOCUMENT CONTENT:
 ${contextDocs}
 `;
-    }
-
-    else {
-      let contextString = '';
-      if (faqs && faqs.length > 0) {
-        contextString = `\nHere is some information you should know and use to answer questions: ${JSON.stringify(faqs)}`;
-      }
-      systemPrompt = `${basePrompt}\n\nYour name is ${bot.name}. Be helpful, polite, and concise. 
-IMPORTANT: NEVER include the statement "Welcome to Rsi concepts. I am here to help you learn about products and services and solution." or any similar greeting.${contextString}`;
-    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
