@@ -22,6 +22,10 @@ const PdfDocument = sequelize.define('PdfDocument', {
   status: {
     type: DataTypes.ENUM('pending', 'processing', 'completed', 'failed'),
     defaultValue: 'pending',
+  },
+  openai_file_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
   }
 }, {
   timestamps: true,

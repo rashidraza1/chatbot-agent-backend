@@ -39,6 +39,10 @@ const Bot = sequelize.define('Bot', {
   prompt: {
     type: DataTypes.TEXT,
     allowNull: true,
+  },
+  vector_store_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
   }
 }, {
   timestamps: true,

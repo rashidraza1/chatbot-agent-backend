@@ -83,12 +83,24 @@ module.exports = (io, socket) => {
 
           setTimeout(async () => {
              try {
-               // 1. Perform RAG Search against PDFs
-               const ragContext = await searchRelevantChunks(conversation.Bot.id, content, 3);
-               console.log(`Found ${ragContext.length} relevant PDF chunks for the query.`);
+               // 1. Fetch conversation history (last 10 messages for context)
+               const historyMessages = await Message.findAll({
+                 where: { conversation_id: conversationId },
+                 order: [['createdAt', 'DESC']],
+                 limit: 10
+               });
+               // Reverse because we want oldest to newest for OpenAI
+               const history = historyMessages.reverse().map(m => ({
+                 role: m.sender_type === 'bot' ? 'assistant' : 'user',
+                 content: m.content
+               }));
 
-               // 2. Generate response with context
-               const responseContent = await generateBotResponse(conversation.Bot, content, conversation.Bot.faqs, ragContext);
+               // 2. Perform Search (updated to use OpenAI Vector Store)
+               const ragContext = await searchRelevantChunks(conversation.Bot.id, content, 5);
+               console.log(`Found ${ragContext.length} relevant context items.`);
+
+               // 3. Generate response with history and context
+               const responseContent = await generateBotResponse(conversation.Bot, content, conversation.Bot.faqs, ragContext, history);
                console.log('Generated bot response:', responseContent);
 
                const botMessage = await Message.create({

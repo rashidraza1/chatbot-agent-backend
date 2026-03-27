@@ -1,0 +1,33 @@
+2026-03-27T14:50:31.716Z | Bot ID: 1 | Error: UserError: Unsupported output content type: {"type":"input_text","text":"Hello, how may I assist you regarding RSI Concepts?"}
+    at getOutputMessageContent (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1215:11)
+    at Array.map (<anonymous>)
+    at getMessageItem (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1259:35)
+    at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1312:20
+    at Array.map (<anonymous>)
+    at getInputItems (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1310:18)
+    at OpenAIResponsesModel._buildResponsesCreateRequest (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2109:23)
+    at OpenAIResponsesModel._fetchResponse (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2072:35)
+    at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2222:41
+    at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-core\dist\tracing\createSpans.js:25:30
+2026-03-27T14:52:01.163Z | Bot ID: 1 | Error: UserError: Unsupported output content type: {"type":"input_text","text":"Hello, how may I assist you regarding RSI Concepts?"}
+    at getOutputMessageContent (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1215:11)
+    at Array.map (<anonymous>)
+    at getMessageItem (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1259:35)
+    at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1312:20
+    at Array.map (<anonymous>)
+    at getInputItems (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1310:18)
+    at OpenAIResponsesModel._buildResponsesCreateRequest (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2109:23)
+    at OpenAIResponsesModel._fetchResponse (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2072:35)
+    at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2222:41
+    at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-core\dist\tracing\createSpans.js:25:30
+2026-03-27T14:54:06.462Z | Bot ID: 1 | Error: UserError: Unsupported output content type: {"type":"input_text","text":"Hello, how may I assist you regarding RSI Concepts?"}
+    at getOutputMessageContent (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1215:11)
+    at Array.map (<anonymous>)
+    at getMessageItem (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1259:35)
+    at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1312:20
+    at Array.map (<anonymous>)
+    at getInputItems (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:1310:18)
+    at OpenAIResponsesModel._buildResponsesCreateRequest (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2109:23)
+    at OpenAIResponsesModel._fetchResponse (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2072:35)
+    at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2222:41
+    at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-core\dist\tracing\createSpans.js:25:30

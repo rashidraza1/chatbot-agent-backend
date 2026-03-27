@@ -81,7 +81,7 @@ exports.deleteBot = async (req, res) => {
 exports.getWidgetBotConfig = async (req, res) => {
   try {
     const bot = await Bot.findByPk(req.params.id, {
-      attributes: ['id', 'name', 'avatar_url', 'color_theme', 'welcome_message', 'use_ai', 'faqs', 'prompt']
+      attributes: ['id', 'name', 'avatar_url', 'color_theme', 'welcome_message', 'use_ai', 'faqs', 'prompt', 'vector_store_id']
     });
     if (!bot) return res.status(404).json({ message: 'Bot not found' });
     res.json(bot);

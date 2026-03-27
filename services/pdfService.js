@@ -1,65 +1,57 @@
 const fs = require('fs');
-const pdfParse = require('pdf-parse');
 const OpenAI = require('openai');
-const { PdfChunk } = require('../models');
+const { PdfDocument, Bot, PdfChunk } = require('../models');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Helper: Split text into chunks
-const chunkText = (text, maxLength = 1000) => {
-  const words = text.split(/\s+/);
-  const chunks = [];
-  let currentChunk = [];
-
-  for (const word of words) {
-    if (currentChunk.join(' ').length + word.length + 1 <= maxLength) {
-      currentChunk.push(word);
-    } else {
-      chunks.push(currentChunk.join(' '));
-      currentChunk = [word];
-    }
-  }
-  if (currentChunk.length > 0) {
-    chunks.push(currentChunk.join(' '));
-  }
-  return chunks;
-};
-
-// Process PDF file and store chunks/embeddings
+/**
+ * Process PDF file:
+ * 1. Create Vector Store for the Bot if not exists.
+ * 2. Upload file to OpenAI.
+ * 3. Add file to the Bot's Vector Store.
+ * 4. Update DB with OpenAI file/vector store IDs.
+ */
 exports.processPdf = async (pdfDoc) => {
   try {
-    const dataBuffer = fs.readFileSync(pdfDoc.file_path);
-    const data = await pdfParse(dataBuffer);
-    const text = data.text;
+    await pdfDoc.update({ status: 'processing' });
+    
+    // 1. Get or create Vector Store for the bot
+    const bot = await Bot.findByPk(pdfDoc.bot_id);
+    if (!bot) throw new Error(`Bot ${pdfDoc.bot_id} not found`);
 
-    const chunks = chunkText(text, 1000); // 1000 chars per chunk
-    console.log(`Split PDF ${pdfDoc.id} into ${chunks.length} chunks.`);
+    let vectorStoreId = bot.vector_store_id;
 
-    for (const chunk of chunks) {
-      if (!chunk.trim()) continue;
-
-      // Generate embedding using OpenAI
-      const response = await openai.embeddings.create({
-        model: "text-embedding-3-small",
-        input: chunk,
+    if (!vectorStoreId) {
+      console.log(`Creating new Vector Store for bot ${bot.name}...`);
+      const vectorStore = await openai.vectorStores.create({
+        name: `Bot_${bot.id}_Knowledge_Base`
       });
-
-      const embedding = response.data[0].embedding;
-
-      // Store in DB
-      await PdfChunk.create({
-        bot_id: pdfDoc.bot_id,
-        pdf_id: pdfDoc.id,
-        content: chunk,
-        embedding: embedding // JSON column stores array
-      });
+      vectorStoreId = vectorStore.id;
+      await bot.update({ vector_store_id: vectorStoreId });
     }
 
-    // Update status
-    await pdfDoc.update({ status: 'completed' });
-    console.log(`Successfully processed PDF: ${pdfDoc.file_name}`);
+    // 2. Upload file to OpenAI
+    console.log(`Uploading file ${pdfDoc.file_name} to OpenAI...`);
+    const file = await openai.files.create({
+      file: fs.createReadStream(pdfDoc.file_path),
+      purpose: "assistants",
+    });
+
+    // 3. Add file to Vector Store
+    console.log(`Adding file ${file.id} to Vector Store ${vectorStoreId}...`);
+    await openai.vectorStores.files.create(vectorStoreId, {
+      file_id: file.id
+    });
+
+    // 4. Update PDF Document record
+    await pdfDoc.update({
+      status: 'completed',
+      openai_file_id: file.id
+    });
+
+    console.log(`Successfully processed PDF ${pdfDoc.file_name} and added to Vector Store ${vectorStoreId}`);
 
   } catch (error) {
     console.error(`Error processing PDF ${pdfDoc.id}:`, error);
@@ -69,57 +61,39 @@ exports.processPdf = async (pdfDoc) => {
   }
 };
 
-// Function to compute cosine similarity between two vectors
-const cosineSimilarity = (vecA, vecB) => {
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-  for (let i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
-    normA += vecA[i] * vecA[i];
-    normB += vecB[i] * vecB[i];
-  }
-  if (normA === 0 || normB === 0) return 0;
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-};
-
-// Search for relevant chunks given a query
-exports.searchRelevantChunks = async (botId, query, topK = 3) => {
+/**
+ * Search for relevant chunks using OpenAI Vector Store Search
+ * (Replaces local cosine similarity search)
+ */
+exports.searchRelevantChunks = async (botId, query, topK = 5) => {
   try {
-    // 1. Embed the user's query
-    const queryResponse = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: query,
-    });
-    const queryEmbedding = queryResponse.data[0].embedding;
+    const bot = await Bot.findByPk(botId);
+    if (!bot || !bot.vector_store_id) {
+       console.warn(`Bot ${botId} has no Vector Store. Search skipped.`);
+       return [];
+    }
 
-    // 2. Fetch all chunks for this bot
-    const allChunks = await PdfChunk.findAll({
-      where: { bot_id: botId }
-    });
-
-    if (allChunks.length === 0) return [];
-
-    // 3. Calculate similarity for each chunk (Done in memory for simplicity/performance given smaller scales)
-    const scoredChunks = allChunks.map(chunk => {
-      let chunkEmbedding = chunk.embedding;
-      // Depending on DB/Sequelize mapping, it might be a stringified JSON array
-      if (typeof chunkEmbedding === 'string') {
-          chunkEmbedding = JSON.parse(chunkEmbedding);
-      }
-      const similarity = cosineSimilarity(queryEmbedding, chunkEmbedding);
-      return {
-        content: chunk.content,
-        similarity
-      };
+    console.log(`Searching Vector Store ${bot.vector_store_id} for: "${query}"`);
+    
+    // Note: client.vectorStores.search is part of the newer Agentic SDK or standard Assistant API
+    // If using standard SDK, we use vectorStores.fileBatches or similar, 
+    // but the user's snippet specifically mentioned client.vectorStores.search.
+    
+    const searchResult = await openai.vectorStores.search(bot.vector_store_id, {
+      query: query,
+      max_num_results: topK
     });
 
-    // 4. Sort by highest similarity and return top K
-    scoredChunks.sort((a, b) => b.similarity - a.similarity);
-    return scoredChunks.slice(0, Math.min(topK, scoredChunks.length));
+    return searchResult.data.map((result) => ({
+      id: result.file_id,
+      content: (result.content && Array.isArray(result.content))
+        ? result.content.map(c => c.text).join(" ")
+        : "",
+      score: result.score,
+    }));
 
   } catch (error) {
-    console.error('Error searching RAG chunks:', error);
+    console.error('Error searching Vector Store:', error);
     return [];
   }
 };
