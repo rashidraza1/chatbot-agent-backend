@@ -31,3 +31,15 @@
     at OpenAIResponsesModel._fetchResponse (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2072:35)
     at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2222:41
     at F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-core\dist\tracing\createSpans.js:25:30
+2026-03-30T09:43:32.694Z | Bot ID: 1 | Error: TypeError: runner.runStream is not a function
+    at F:\Rashid\ReactJS\chatbot-agent\backend\services\openaiService.js:111:27
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-core\dist\tracing\context.js:97:28
+    at async exports.generateBotResponse (F:\Rashid\ReactJS\chatbot-agent\backend\services\openaiService.js:28:10)
+    at async debugChat (F:\Rashid\ReactJS\chatbot-agent\backend\scripts\verify-chat.js:25:20)
+2026-03-30T10:27:30.465Z | Bot ID: 1 | Error: TypeError: runner.runStream is not a function
+    at F:\Rashid\ReactJS\chatbot-agent\backend\services\openaiService.js:97:35
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-core\dist\tracing\context.js:97:28
+    at async exports.generateBotResponse (F:\Rashid\ReactJS\chatbot-agent\backend\services\openaiService.js:12:10)
+    at async exports.processChat (F:\Rashid\ReactJS\chatbot-agent\backend\controllers\chatController.js:73:31)
