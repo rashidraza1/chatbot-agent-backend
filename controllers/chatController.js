@@ -70,14 +70,53 @@ exports.processChat = async (req, res) => {
         }));
 
       // 3. Generate response with context and history
-      const responseContent = await generateBotResponse(
-        conversation.Bot,
-        content,
-        conversation.Bot.faqs || [],
-        ragContext,
-        history
-      );
+      let responseContent = "";
+      const isStreaming = req.body.stream === true;
 
+      if (isStreaming) {
+        console.log("Streaming started...");
+
+        // ✅ SSE Headers (IMPORTANT)
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no'); // for nginx
+
+        // ✅ Start event
+        res.write(`data: ${JSON.stringify({ type: "start" })}\n\n`);
+
+        // ✅ Handle client disconnect
+        req.on("close", () => {
+          console.log("Client disconnected ❌");
+        });
+
+        responseContent = await generateBotResponse(
+          conversation.Bot,
+          content,
+          conversation.Bot.faqs || [],
+          ragContext,
+          history,
+          (delta) => {
+            // ✅ Proper SSE format
+            responseContent += delta; // ✅ ADD THIS
+            console.log("delta", delta);
+            res.write(`data: ${JSON.stringify({
+              type: "delta",
+              content: delta
+            })}\n\n`);
+          }
+        );
+      } else {
+        responseContent = await generateBotResponse(
+          conversation.Bot,
+          content,
+          conversation.Bot.faqs || [],
+          ragContext,
+          history
+        );
+      }
+
+      // Save the bot's response to the database
       const botMessage = await Message.create({
         conversation_id: conversation.id,
         sender_type: 'bot',
@@ -85,18 +124,22 @@ exports.processChat = async (req, res) => {
       });
 
       // Touch conversation to update updatedAt
-      // await conversation.update({ updatedAt: new Date() });
-
       await Conversation.update(
-        { status: conversation.status }, // 👈 dummy/no-change update
+        { status: conversation.status }, // dummy update to trigger updatedAt
         { where: { id: conversation.id } }
       );
 
-      //console.log('Bot  conversation:', conversation);
-
-      const updated = await Conversation.findByPk(conversation.id);
-      console.log("NEW updatedAt:", updated.updatedAt);
-
+      if (isStreaming) {
+        console.log("Streaming completed ✅");
+        res.write(`data: ${JSON.stringify({
+          type: "done",
+          conversation_id: conversation.id,
+          title: conversation.title,
+          userMessage,
+          botMessage
+        })}\n\n`);
+        return res.end();
+      }
 
       return res.status(200).json({
         conversation_id: conversation.id,
@@ -163,4 +206,3 @@ exports.deleteConversation = async (req, res) => {
     res.status(500).json({ error: 'Server Error' });
   }
 };
-

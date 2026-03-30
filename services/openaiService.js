@@ -8,17 +8,19 @@ const client = new OpenAI({
 /**
  * Generate bot response using @openai/agents Agent & Runner
  */
-exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [], history = []) => {
+exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [], history = [], onDelta) => {
   return await withTrace(`Bot_${bot.id}_Response`, async () => {
     try {
-      // 1. Check if an FAQ matches directly
-      if (faqs && Array.isArray(faqs)) {
+      // 1. Check if an FAQ matches directly (only for non-streaming for now, or handle separately)
+      if (faqs && Array.isArray(faqs) && !onDelta) {
         const match = faqs.find(faq => faq.question.toLowerCase() === visitorMessage.toLowerCase());
         if (match) return match.answer;
       }
 
       if (!bot.use_ai) {
-        return "I'm sorry, an agent will be with you shortly.";
+        const fallback = "I'm sorry, an agent will be with you shortly.";
+        if (onDelta) onDelta(fallback);
+        return fallback;
       }
 
       // 2. Define the Agent
@@ -30,7 +32,7 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
 - If providing a numbered list, use the format 1), 2), 3) instead of 1., 2., 3.
 - Keep responses professional, concise, and factual.
 `,
-        model: "gpt-4o", // Using gpt-4o as a reliable premium model
+        model: "gpt-4o",
         modelSettings: {
           temperature: 0.7,
           maxTokens: 2048,
@@ -38,9 +40,7 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
         }
       });
 
-      // 3. Prepare conversation history for the Runner
-      // history items usually come as { role, content }
-      // @openai/agents might expect AgentInputItem format
+      // 3. Prepare conversation history
       const conversationHistory = history.map(item => ({
         role: item.role,
         content: [{
@@ -49,7 +49,6 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
         }]
       }));
 
-      // Add the current user message
       conversationHistory.push({
         role: "user",
         content: [{ type: "input_text", text: visitorMessage }]
@@ -62,11 +61,9 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
         }
       });
 
-      // 4. Perform vector store search if bot has one
-      // We can manually inject search results as additional context if the Agent SDK doesn't handle the tool automatically
+      // 4. Vector store search
       let searchContext = "";
       if (bot.vector_store_id) {
-        console.log(`Searching vector store ${bot.vector_store_id} for context...`);
         try {
           const searchResult = await client.vectorStores.search("vs_69c663be52948191941de261a6970ed6", {
             query: visitorMessage,
@@ -78,33 +75,59 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
               : "";
           }).join("\n\n---\n\n");
         } catch (err) {
-          console.error("Vector search failed during response generation:", err);
+          console.error("Vector search failed:", err);
         }
       }
-
-      // If we have search context, we can append it to the prompt or as a specialized message
-      // In the Agent pattern, we might want to use tools, but here we'll follow the user's pattern of injection if needed.
-      // Actually, if the agent has "Use only information retrieved from the attached File Search knowledge base", 
-      // and we don't have a real "tool" abstraction yet, we'll inject it into the instructions for this run.
 
       if (searchContext) {
         agent.instructions += `\n\nAPPROVED DOCUMENT CONTENT:\n${searchContext}`;
       }
 
       // 5. Run the agent
-      const result = await runner.run(agent, conversationHistory);
+      // ✅ Run Agent
+      let finalResponse = "";
 
-      if (!result.finalOutput) {
-        throw new Error("Agent result is undefined");
+      if (onDelta) {
+        // 🔥 STREAMING MODE (0.8.x compatible)
+        const result = await runner.run(agent, conversationHistory, { stream: true });
+
+        let buffer = "";
+
+        for await (const chunk of result.toTextStream()) {
+          finalResponse += chunk;
+          buffer += chunk;
+
+          // ✅ Buffering fix (VERY IMPORTANT)
+          if (
+            buffer.endsWith(" ") ||
+            buffer.endsWith(".") ||
+            buffer.endsWith("\n") ||
+            buffer.length > 30
+          ) {
+            onDelta(buffer);
+            buffer = "";
+          }
+        }
+
+        // flush remaining
+        if (buffer) {
+          onDelta(buffer);
+        }
+
+      } else {
+        // ✅ Normal mode
+        const result = await runner.run(agent, conversationHistory);
+
+        if (!result.finalOutput) {
+          throw new Error("Agent result is undefined");
+        }
+
+        finalResponse = result.finalOutput;
       }
 
-      let finalResponse = result.finalOutput;
-
-      // Clean up common unwanted statements if needed
+      // Clean up and format
       const unwantedStatement = /Welcome to Rsi concepts[.!]? I am (here )?to help you learn about products and services (and )?solutions?[.!]?/gi;
       finalResponse = finalResponse.replace(unwantedStatement, "").trim();
-
-      // Ensure numbered lists use 1), 2), 3) format
       finalResponse = finalResponse.replace(/^(\d+)\.\s/gm, "$1) ");
 
       return finalResponse;
