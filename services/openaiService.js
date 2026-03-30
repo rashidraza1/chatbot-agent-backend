@@ -24,10 +24,11 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
       // 2. Define the Agent
       const agent = new Agent({
         name: bot.name || "AI Assistant",
-        instructions: `
+        instructions: `${bot.prompt || "Keep answers short, polite, and personalized."}
 
-- ${bot.prompt || "Keep answers short, polite, and personalized."}
-
+- Use only one short opening greeting line or one short closing greeting line when needed.
+- If providing a numbered list, use the format 1), 2), 3) instead of 1., 2., 3.
+- Keep responses professional, concise, and factual.
 `,
         model: "gpt-4o", // Using gpt-4o as a reliable premium model
         modelSettings: {
@@ -42,9 +43,9 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
       // @openai/agents might expect AgentInputItem format
       const conversationHistory = history.map(item => ({
         role: item.role,
-        content: [{ 
-          type: item.role === "assistant" ? "output_text" : "input_text", 
-          text: item.content 
+        content: [{
+          type: item.role === "assistant" ? "output_text" : "input_text",
+          text: item.content
         }]
       }));
 
@@ -67,7 +68,7 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
       if (bot.vector_store_id) {
         console.log(`Searching vector store ${bot.vector_store_id} for context...`);
         try {
-          const searchResult = await client.vectorStores.search(bot.vector_store_id, {
+          const searchResult = await client.vectorStores.search("vs_69c663be52948191941de261a6970ed6", {
             query: visitorMessage,
             max_num_results: 5
           });
@@ -102,6 +103,9 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
       // Clean up common unwanted statements if needed
       const unwantedStatement = /Welcome to Rsi concepts[.!]? I am (here )?to help you learn about products and services (and )?solutions?[.!]?/gi;
       finalResponse = finalResponse.replace(unwantedStatement, "").trim();
+
+      // Ensure numbered lists use 1), 2), 3) format
+      finalResponse = finalResponse.replace(/^(\d+)\.\s/gm, "$1) ");
 
       return finalResponse;
 
