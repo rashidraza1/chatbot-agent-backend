@@ -43,3 +43,10 @@
     at async F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-core\dist\tracing\context.js:97:28
     at async exports.generateBotResponse (F:\Rashid\ReactJS\chatbot-agent\backend\services\openaiService.js:12:10)
     at async exports.processChat (F:\Rashid\ReactJS\chatbot-agent\backend\controllers\chatController.js:73:31)
+2026-03-31T11:30:29.899Z | Bot ID: 1 | Error: Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.
+    at Stream.iterator (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\openai\core\streaming.js:50:35)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async withAttachedResponseRequestId (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2047:22)
+    at async OpenAIResponsesModel.getStreamedResponse (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-openai\dist\openaiResponsesModel.js:2265:30)
+    at async getStreamedResponseWithRetry (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-core\dist\runner\modelRetry.js:534:30)
+    at async #runStreamLoop (F:\Rashid\ReactJS\chatbot-agent\backend\node_modules\@openai\agents-core\dist\run.js:621:42)

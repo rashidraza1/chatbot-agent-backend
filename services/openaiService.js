@@ -88,33 +88,21 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
       let finalResponse = "";
 
       if (onDelta) {
-        // 🔥 STREAMING MODE (0.8.x compatible)
         const result = await runner.run(agent, conversationHistory, { stream: true });
 
-        let buffer = "";
-
         for await (const chunk of result.toTextStream()) {
+          // 🔥 IMPORTANT: no buffering here
           finalResponse += chunk;
-          buffer += chunk;
 
-          // ✅ Buffering fix (VERY IMPORTANT)
-          if (
-            buffer.endsWith(" ") ||
-            buffer.endsWith(".") ||
-            buffer.endsWith("\n") ||
-            buffer.length > 30
-          ) {
-            onDelta(buffer);
-            buffer = "";
-          }
+          // send raw chunk
+          onDelta(chunk);
+
+          // small delay for smoothness
+          await new Promise(r => setTimeout(r, 10));
         }
+      }
 
-        // flush remaining
-        if (buffer) {
-          onDelta(buffer);
-        }
-
-      } else {
+      else {
         // ✅ Normal mode
         const result = await runner.run(agent, conversationHistory);
 
