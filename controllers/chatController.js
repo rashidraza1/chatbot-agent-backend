@@ -95,7 +95,6 @@ exports.processChat = async (req, res) => {
       res.write(`data: ${JSON.stringify({ type: "start" })}\n\n`);
 
       let isClosed = false;
-      let buffer = "";
 
       req.on("close", () => {
         console.log("Client disconnected ❌");
@@ -111,35 +110,17 @@ exports.processChat = async (req, res) => {
         (delta) => {
           if (isClosed) return;
 
-          buffer += delta;
+          // send raw chunk IMMEDIATELY
+          res.write(`data: ${JSON.stringify({
+            type: "delta",
+            content: delta
+          })}\n\n`);
 
-          console.log("delta ", delta);
-          const shouldFlush =
-            buffer.length > 20 ||
-            /[.!?]\s/.test(buffer) ||
-            /\n/.test(buffer);
-
-          if (shouldFlush && buffer.trim()) {
-            res.write(`data: ${JSON.stringify({
-              type: "delta",
-              content: buffer
-            })}\n\n`);
-
-            buffer = "";
-
-            if (res.flush) res.flush();
-          }
-
+          if (res.flush) res.flush();
         }
       );
 
-      // 🔥 flush remaining
-      if (buffer && !isClosed) {
-        res.write(`data: ${JSON.stringify({
-          type: "delta",
-          content: buffer
-        })}\n\n`);
-      }
+      // No residual buffer needed anymore as we send deltas immediately
 
       // ================================
       // 5. SAVE BOT MESSAGE

@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { Server } = require('socket.io');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 
 const { sequelize } = require('./models');
 const chatHandler = require('./sockets/chatHandler');
@@ -38,6 +39,17 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
   chatHandler(io, socket);
 });
+
+
+
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers.accept === 'text/event-stream') {
+      return false; // ❌ disable for SSE
+    }
+    return compression.filter(req, res);
+  }
+}));
 
 // Routes
 app.get('/health', (req, res) => res.status(200).json({ status: 'OK' }));

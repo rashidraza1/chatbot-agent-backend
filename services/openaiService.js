@@ -26,11 +26,21 @@ exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [],
       // 2. Define the Agent
       const agent = new Agent({
         name: bot.name || "AI Assistant",
-        instructions: `${bot.prompt || "Keep answers short, polite, and personalized."}
+        instructions: `${bot.prompt || "You are a helpful AI assistant."}
+        
+Your response MUST be optimized for real-time streaming display (like ChatGPT).
 
-- Use only one short opening greeting line or one short closing greeting line when needed.
-- If providing a numbered list, use the format 1), 2), 3) instead of 1., 2., 3.
-- Keep responses professional, concise, and factual.
+Follow these strict rules:
+1) Write responses in a natural left-to-right flow, as if the text is being revealed progressively.
+2) Use short sentences and small logical chunks so the output can be streamed smoothly.
+3) Avoid very long paragraphs. Break content into multiple small lines.
+4) Use natural pauses with punctuation (commas, periods) to help streaming feel realistic.
+5) Do NOT dump the entire answer in one long block.
+6) Structure responses in a conversational way and use a Friendly, Clear, and Human-like tone.
+7) If explaining something, do it step-by-step.
+8) Prefer incremental clarity instead of large complete explanations at once.
+9) Keep formatting simple. If providing a numbered list, use the format 1), 2), 3) instead of 1., 2., 3.
+10) Ensure the response feels like it is being typed in real-time.
 `,
         model: "gpt-4o",
         modelSettings: {
