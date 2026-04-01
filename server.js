@@ -16,9 +16,28 @@ const server = http.createServer(app);
 // Serve static widget files
 app.use(express.static('public'));
 
+// CORS Configuration Whitelist
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173', 'https://your-production-app.com'];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
 // Security and Middleware
 app.use(helmet());
-app.use(cors({ origin: '*' })); // Allow all origins for the widget
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rate limiting
@@ -30,10 +49,7 @@ app.use(limiter);
 
 // Socket.io Setup
 const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+  cors: corsOptions
 });
 
 io.on('connection', (socket) => {

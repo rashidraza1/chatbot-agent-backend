@@ -4,8 +4,11 @@ const { searchRelevantChunks } = require('../services/pdfService');
 
 exports.processChat = async (req, res) => {
   try {
-    const { bot_id, conversation_id, user_id, content } = req.body;
+    const { bot_id, conversation_id, content } = req.body;
     let conversation;
+
+    const authId = req.user.id;
+    const authType = req.userType;
 
     // ================================
     // 1. GET / CREATE CONVERSATION
@@ -15,25 +18,21 @@ exports.processChat = async (req, res) => {
     }
 
     if (!conversation) {
-      const visitor = await Visitor.create({
-        name: 'Guest',
-        last_page_url: req.headers.referer || null
-      });
-
       const title = await generateChatTitle(bot_id, content);
 
       conversation = await Conversation.create({
         bot_id,
-        visitor_id: visitor.id,
-        user_id: user_id || null,
+        visitor_id: authType === 'guest' ? authId : null,
+        user_id: authType === 'user' ? authId : null,
         title,
         status: 'active'
       });
 
       conversation = await Conversation.findByPk(conversation.id, { include: [Bot] });
     } else {
-      if (user_id && !conversation.user_id) {
-        await conversation.update({ user_id });
+      // Sync user_id if upgrading from guest to logged-in
+      if (authType === 'user' && !conversation.user_id) {
+        await conversation.update({ user_id: authId });
       }
     }
 
@@ -43,7 +42,7 @@ exports.processChat = async (req, res) => {
     const userMessage = await Message.create({
       conversation_id: conversation.id,
       sender_type: 'visitor',
-      sender_id: user_id || conversation.visitor_id,
+      sender_id: authId,
       content
     });
 
@@ -79,11 +78,9 @@ exports.processChat = async (req, res) => {
     const isStreaming = req.body.stream === true;
 
     // ================================
-    // 🔥 4. STREAMING MODE (FIXED)
+    // 🔥 4. STREAMING MODE
     // ================================
     if (isStreaming) {
-      console.log("Streaming started...");
-
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache, no-transform');
       res.setHeader('Connection', 'keep-alive');
@@ -97,7 +94,6 @@ exports.processChat = async (req, res) => {
       let isClosed = false;
 
       req.on("close", () => {
-        console.log("Client disconnected ❌");
         isClosed = true;
       });
 
@@ -109,34 +105,17 @@ exports.processChat = async (req, res) => {
         history,
         (delta) => {
           if (isClosed) return;
-
-          // send raw chunk IMMEDIATELY
-          res.write(`data: ${JSON.stringify({
-            type: "delta",
-            content: delta
-          })}\n\n`);
-
+          res.write(`data: ${JSON.stringify({ type: "delta", content: delta })}\n\n`);
           if (res.flush) res.flush();
         }
       );
 
-      // No residual buffer needed anymore as we send deltas immediately
-
-      // ================================
       // 5. SAVE BOT MESSAGE
-      // ================================
       const botMessage = await Message.create({
         conversation_id: conversation.id,
         sender_type: 'bot',
         content: responseContent
       });
-
-      await Conversation.update(
-        { status: conversation.status },
-        { where: { id: conversation.id } }
-      );
-
-      console.log("Streaming completed ✅");
 
       if (!isClosed) {
         res.write(`data: ${JSON.stringify({
@@ -146,10 +125,8 @@ exports.processChat = async (req, res) => {
           userMessage,
           botMessage
         })}\n\n`);
-
         res.end();
       }
-
       return;
     }
 
@@ -170,11 +147,6 @@ exports.processChat = async (req, res) => {
       content: responseContent
     });
 
-    await Conversation.update(
-      { status: conversation.status },
-      { where: { id: conversation.id } }
-    );
-
     return res.status(200).json({
       conversation_id: conversation.id,
       title: conversation.title,
@@ -184,22 +156,23 @@ exports.processChat = async (req, res) => {
 
   } catch (error) {
     console.error('Error processing chat:', error);
-    res.status(500).json({
-      error: 'Failed to process chat',
-      details: error.message
-    });
+    res.status(500).json({ error: 'Failed to process chat', details: error.message });
   }
 };
 
-
-
 exports.getConversations = async (req, res) => {
   try {
-    const { user_id, bot_id } = req.query;
-    if (!user_id || !bot_id) return res.status(400).json({ error: 'user_id and bot_id are required' });
+    const { bot_id } = req.query;
+    const authId = req.user.id;
+    const authType = req.userType;
+
+    if (!bot_id) return res.status(400).json({ error: 'bot_id is required' });
 
     const conversations = await Conversation.findAll({
-      where: { user_id, bot_id },
+      where: { 
+        bot_id,
+        [authType === 'user' ? 'user_id' : 'visitor_id']: authId
+      },
       order: [['updatedAt', 'DESC']]
     });
     res.json(conversations);
@@ -216,9 +189,7 @@ exports.getConversationMessages = async (req, res) => {
       where: { conversation_id: id },
       order: [['createdAt', 'ASC']]
     });
-
     const conversation = await Conversation.findByPk(id);
-
     res.json({ conversation, messages });
   } catch (error) {
     console.error('Error fetching messages:', error);

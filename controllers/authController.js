@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
-const { User } = require('../models');
+const { User, Visitor } = require('../models');
 
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -47,7 +47,11 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign(
+      { id: user.id, email: user.email, type: 'user' }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '1d' }
+    );
 
     res.json({ token, user: { id: user.id, email: user.email, full_name: user.full_name } });
   } catch (err) {
@@ -56,9 +60,29 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.guestLogin = async (req, res) => {
+  try {
+    const visitor = await Visitor.create({
+      name: `Guest_${Math.floor(1000 + Math.random() * 9000)}`,
+      last_page_url: req.headers.referer || null
+    });
+
+    const token = jwt.sign(
+      { id: visitor.id, type: 'guest' }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
+
+    res.json({ token, visitor: { id: visitor.id, name: visitor.name } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error creating guest' });
+  }
+};
+
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.id, { attributes: { exclude: ['password_hash'] }});
+    const user = req.user;
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (err) {
