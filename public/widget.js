@@ -5,9 +5,24 @@
     return;
   }
 
+  // Inject responsive styles
+  var style = document.createElement('style');
+  style.innerHTML = `
+    @media (max-width: 640px) {
+      .chatdesk-widget-container.chatdesk-expanded {
+       
+      max-width: 100vw !important;
+        right: 10px !important;
+       
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
   // Create iframe container
   var container = document.createElement('div');
   container.id = 'chatdesk-widget-container';
+  container.className = 'chatdesk-widget-container';
   container.style.position = 'fixed';
   container.style.bottom = '20px';
   container.style.right = '20px';
@@ -25,8 +40,8 @@
   var iframe = document.createElement('iframe');
   // Pass the current page URL to the iframe so the bot knows where the visitor is
   var currentUrl = encodeURIComponent(window.location.href);
-  //iframe.src = 'http://localhost:3000/widget/' + botId + '?url=' + currentUrl;
-  iframe.src = 'https://chatbot-agent-frontend.vercel.app/widget/' + botId + '?url=' + currentUrl;
+  iframe.src = 'http://localhost:3000/widget/' + botId + '?url=' + currentUrl;
+  //iframe.src = 'https://chatbot-agent-frontend.vercel.app/widget/' + botId + '?url=' + currentUrl;
   iframe.style.width = '100%';
   iframe.style.height = '100%';
   iframe.style.border = 'none';
@@ -39,20 +54,23 @@
 
   // Listen for messages from iframe to resize container
   window.addEventListener('message', function (event) {
-    //if (event.origin !== 'http://localhost:3000') return;
-    if (event.origin !== 'https://chatbot-agent-frontend.vercel.app') return;
+    if (event.origin !== 'http://localhost:3000') return;
+    //if (event.origin !== 'https://chatbot-agent-frontend.vercel.app') return;
 
     if (event.data === 'chatdesk-minimize') {
+      container.classList.remove('chatdesk-expanded');
       container.style.width = '80px';
       container.style.height = '80px';
       container.style.bottom = '20px';
       container.style.right = '20px';
     } else if (event.data === 'chatdesk-expand') {
+      container.classList.add('chatdesk-expanded');
       container.style.width = '380px';
       container.style.height = '600px';
       container.style.bottom = '20px';
       container.style.right = '20px';
     } else if (event.data === 'chatdesk-maximize') {
+      container.classList.add('chatdesk-expanded');
       container.style.width = '95vw';
       container.style.height = '95vh';
       container.style.bottom = '2.5vh';
