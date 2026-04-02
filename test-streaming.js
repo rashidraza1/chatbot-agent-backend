@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { generateBotStream } = require('./services/openaiService');
+const { generateBotResponse } = require('./services/openaiService');
 
 async function test() {
   const bot = {
@@ -9,17 +9,15 @@ async function test() {
     use_ai: true,
     vector_store_id: null
   };
-  const visitorMessage = "Hello, who are you?";
+  const visitorMessage = "Can you explain how to make a cup of coffee using your rules for streaming? Please be very descriptive but follow the short sentences and small chunks rule.";
   
   console.log("Starting stream...");
   try {
-    const stream = await generateBotStream(bot, visitorMessage, [], [], []);
-    
     let fullText = "";
-    for await (const delta of stream.toTextStream()) {
+    await generateBotResponse(bot, visitorMessage, [], [], [], (delta) => {
       process.stdout.write(delta);
       fullText += delta;
-    }
+    });
     console.log("\n\nStream finished.");
     console.log("Full response length:", fullText.length);
   } catch (err) {

@@ -8,13 +8,13 @@
   // Inject responsive styles
   var style = document.createElement('style');
   style.innerHTML = `
-    @media (max-width: 640px) {
+    @media (max-width: 480px) {
       .chatdesk-widget-container.chatdesk-expanded {
        
-      max-width: 100vw !important;
-        right: 10px !important;
-       
-      }
+        max-width: 100vw !important;
+        right: 0px !important;
+        left: 0px;
+        margin: auto;
     }
   `;
   document.head.appendChild(style);

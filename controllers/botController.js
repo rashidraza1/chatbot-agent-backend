@@ -13,7 +13,10 @@ const botSchema = Joi.object({
       answer: Joi.string().required()
     })
   ).allow(null),
-  prompt: Joi.string().allow('', null)
+  prompt: Joi.string().allow('', null),
+  workflow_id: Joi.string().allow('', null),
+  vector_id: Joi.string().allow('', null),
+  openai_key: Joi.string().allow('', null)
 }).unknown(true); // Allow other fields to avoid strict "not allowed" errors for metadata
 
 exports.createBot = async (req, res) => {

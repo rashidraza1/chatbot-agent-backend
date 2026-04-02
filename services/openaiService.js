@@ -75,6 +75,7 @@ Follow these strict rules:
       let searchContext = "";
       if (bot.vector_store_id) {
         try {
+          console.log("Vector store ID:", bot.vector_id);
           const searchResult = await client.vectorStores.search("vs_69c663be52948191941de261a6970ed6", {
             query: visitorMessage,
             max_num_results: 5

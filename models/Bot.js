@@ -43,6 +43,18 @@ const Bot = sequelize.define('Bot', {
   vector_store_id: {
     type: DataTypes.STRING,
     allowNull: true,
+  },
+  workflow_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  vector_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  openai_key: {
+    type: DataTypes.STRING,
+    allowNull: true,
   }
 }, {
   timestamps: true,
