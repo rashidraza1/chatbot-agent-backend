@@ -89,3 +89,43 @@ exports.getMe = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.captureLead = async (req, res) => {
+  try {
+    // Debug logging
+    console.log('Capture Lead Request - userType:', req.userType);
+    console.log('Capture Lead Request - user ID:', req.user?.id);
+
+    const user = req.user;
+    if (!user || req.userType !== 'guest') {
+      return res.status(403).json({ 
+        message: 'Not authorized as a guest',
+        debug: { userType: req.userType, hasUser: !!user } 
+      });
+    }
+
+    const { name, email, mobile_number } = req.body;
+    
+    if (!name || (!email && !mobile_number)) {
+      return res.status(400).json({ message: 'Name and at least email or mobile are required.' });
+    }
+
+    const visitor = await Visitor.findByPk(user.id);
+    if (!visitor) {
+      return res.status(404).json({ message: 'Visitor record not found' });
+    }
+
+    // Update visitor with lead information
+    await visitor.update({
+      name,
+      email: email || null,
+      mobile: mobile_number || null,
+      is_lead: true
+    });
+
+    res.json({ message: 'Lead captured successfully', visitor: { id: visitor.id, name: visitor.name, is_lead: true } });
+  } catch (err) {
+    console.error('Error capturing lead:', err);
+    res.status(500).json({ message: 'Server error capturing lead' });
+  }
+};

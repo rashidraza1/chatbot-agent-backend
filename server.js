@@ -75,11 +75,12 @@ app.use('/api/bots', require('./routes/botRoutes'));
 app.use('/api/conversations', require('./routes/conversationRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/pdfs', require('./routes/pdfRoutes')); // Added PDF routes
+app.use('/api/leads', require('./routes/leadRoutes'));
 
 // Database Sync and Server Start
 const PORT = process.env.PORT || 10000;
 
-sequelize.sync({ alter: true }).then(() => {
+sequelize.sync({ alter: false }).then(() => {
   console.log('Database connected and synced');
   //if (process.env.NODE_ENV !== 'production') {
   server.listen(PORT, () => {

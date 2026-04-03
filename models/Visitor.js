@@ -15,6 +15,14 @@ const Visitor = sequelize.define('Visitor', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  mobile: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  is_lead: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
   last_page_url: {
     type: DataTypes.STRING,
     allowNull: true,
