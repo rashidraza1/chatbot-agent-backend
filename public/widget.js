@@ -8,14 +8,53 @@
   // Inject responsive styles
   var style = document.createElement('style');
   style.innerHTML = `
-    @media (max-width: 480px) {
+    @media(max-width: 480px) {
       .chatdesk-widget-container.chatdesk-expanded {
        
         max-width: 100vw !important;
         right: 0px !important;
         left: 0px;
         margin: auto;
+      }
     }
+
+    /* 360px and below devices (Galaxy S8, OnePlus, etc.) */
+@media (max-width: 360px) {
+
+  .chatdesk-widget-container.chatdesk-expanded {
+    position: fixed !important;
+
+    width: 100vw !important;
+    max-width: 100vw !important;
+
+    height: 100dvh !important;
+
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    border-radius: 0 !important;
+  }
+
+  /* Inner chat box fix */
+  .chatdesk-widget-container * {
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Prevent horizontal scroll */
+  html, body {
+    overflow-x: hidden !important;
+  }
+
+}
+
+
+    
   `;
   document.head.appendChild(style);
 
