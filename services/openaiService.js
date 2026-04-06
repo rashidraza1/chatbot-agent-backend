@@ -11,6 +11,11 @@ const client = new OpenAI({
 exports.generateBotResponse = async (bot, visitorMessage, faqs, ragContext = [], history = [], onDelta) => {
   return await withTrace(`Bot_${bot.id}_Response`, async () => {
     try {
+      console.log("visitorMessage", visitorMessage);
+      console.log("faqs", faqs);
+      console.log("ragContext", ragContext);
+      console.log("history", history);
+      console.log("onDelta", onDelta);
       // 1. Check if an FAQ matches directly (only for non-streaming for now, or handle separately)
       if (faqs && Array.isArray(faqs) && !onDelta) {
         const match = faqs.find(faq => faq.question.toLowerCase() === visitorMessage.toLowerCase());
@@ -73,22 +78,25 @@ Follow these strict rules:
 
       // 4. Vector store search
       let searchContext = "";
-      if (bot.vector_store_id) {
-        try {
-          console.log("Vector store ID:", bot.vector_id);
-          const searchResult = await client.vectorStores.search("vs_69c663be52948191941de261a6970ed6", {
-            query: visitorMessage,
-            max_num_results: 5
-          });
-          searchContext = searchResult.data.map(r => {
-            return (r.content && Array.isArray(r.content))
-              ? r.content.map(c => c.text).join(" ")
-              : "";
-          }).join("\n\n---\n\n");
-        } catch (err) {
-          console.error("Vector search failed:", err);
-        }
+      //if (bot.vector_store_id) {
+      try {
+        console.log("Vector store ID:", bot.vector_id);
+
+        console.log("Hard Code Vector ID:", "vs_69c663be52948191941de261a6970ed6");
+
+        const searchResult = await client.vectorStores.search("vs_69c663be52948191941de261a6970ed6", {
+          query: visitorMessage,
+          max_num_results: 5
+        });
+        searchContext = searchResult.data.map(r => {
+          return (r.content && Array.isArray(r.content))
+            ? r.content.map(c => c.text).join(" ")
+            : "";
+        }).join("\n\n---\n\n");
+      } catch (err) {
+        console.error("Vector search failed:", err);
       }
+      //}
 
       if (searchContext) {
         agent.instructions += `\n\nAPPROVED DOCUMENT CONTENT:\n${searchContext}`;

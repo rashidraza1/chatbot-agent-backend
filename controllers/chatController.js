@@ -12,7 +12,7 @@ const handleLeadCapture = async (content, visitorId) => {
     try {
       // Clean up JSON string: sometimes AI includes unescaped newlines inside strings
       let jsonString = leadMatch[0];
-      jsonString = jsonString.replace(/\n/g, ' '); 
+      jsonString = jsonString.replace(/\n/g, ' ');
       leadData = JSON.parse(jsonString).lead_capture;
     } catch (parseErr) {
       console.warn("JSON.parse failed for lead capture, falling back to regex extraction.");
@@ -22,7 +22,7 @@ const handleLeadCapture = async (content, visitorId) => {
         const m = text.match(regex);
         return m ? m[1].trim() : null;
       };
-      
+
       leadData = {
         name: getField(/"name"\s*:\s*"([^"]+)"/),
         email: getField(/"email"\s*:\s*"([^"]+)"/),
@@ -47,10 +47,10 @@ const handleLeadCapture = async (content, visitorId) => {
         await sendLeadEmail(leadData);
       }
     }
-      // Return content without the JSON block
-      return content.replace(leadMatch[0], '').trim();
-    }
-    return content;
+    // Return content without the JSON block
+    return content.replace(leadMatch[0], '').trim();
+  }
+  return content;
 };
 
 exports.processChat = async (req, res) => {
@@ -117,6 +117,8 @@ exports.processChat = async (req, res) => {
       limit: 11
     });
 
+    console.log("previousMessages HIS", previousMessages);
+
     const history = previousMessages
       .slice(1)
       .reverse()
@@ -124,6 +126,8 @@ exports.processChat = async (req, res) => {
         role: msg.sender_type === 'visitor' ? 'user' : 'assistant',
         content: msg.content
       }));
+
+    console.log("history HIS", history);
 
     let responseContent = "";
     const isStreaming = req.body.stream === true;
@@ -215,7 +219,7 @@ exports.getConversations = async (req, res) => {
     if (!bot_id) return res.status(400).json({ error: 'bot_id is required' });
 
     const conversations = await Conversation.findAll({
-      where: { 
+      where: {
         bot_id,
         [authType === 'user' ? 'user_id' : 'visitor_id']: authId
       },
