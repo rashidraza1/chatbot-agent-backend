@@ -80,7 +80,7 @@ app.use('/api/leads', require('./routes/leadRoutes'));
 // Database Sync and Server Start
 const PORT = process.env.PORT || 10000;
 
-sequelize.sync({ alter: false }).then(() => {
+sequelize.sync({ alter: true }).then(() => {
   console.log('Database connected and synced');
   //if (process.env.NODE_ENV !== 'production') {
   server.listen(PORT, () => {

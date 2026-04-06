@@ -100,13 +100,23 @@ Follow these strict rules:
 
       if (onDelta) {
         const result = await runner.run(agent, conversationHistory, { stream: true });
+        let stopStreamingToClient = false;
 
         for await (const chunk of result.toTextStream()) {
-          // 🔥 IMPORTANT: no buffering here
           finalResponse += chunk;
 
-          // send raw chunk
-          onDelta(chunk);
+          // PROACTIVE: Stop if we see the very beginning of the technical block
+          // Usually starts with a newline then { or ```
+          if (!stopStreamingToClient) {
+            if (finalResponse.match(/\n\s*(\`{3}(json)?\s*)?\{/)) {
+              stopStreamingToClient = true;
+            }
+          }
+
+          // Only send the chunk to the client if we haven't hit the technical data yet
+          if (!stopStreamingToClient && onDelta) {
+            onDelta(chunk);
+          }
 
           // small delay for smoothness
           await new Promise(r => setTimeout(r, 10));

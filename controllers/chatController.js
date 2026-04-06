@@ -1,6 +1,57 @@
 const { Conversation, Message, Bot, Visitor } = require('../models');
 const { generateBotResponse, generateChatTitle } = require('../services/openaiService');
 const { searchRelevantChunks } = require('../services/pdfService');
+const { sendLeadEmail } = require('../services/emailService');
+
+// Helper to extract and handle lead data from AI response
+const handleLeadCapture = async (content, visitorId) => {
+  // Even more aggressive regex: remove from start of JSON/codeblock to end
+  const leadMatch = content.match(/(\`{3}(json)?\s*)?\{[\s\S]*?"lead_capture"[\s\S]*(\}?\s*\`{3})?/);
+  if (leadMatch) {
+    let leadData = null;
+    try {
+      // Clean up JSON string: sometimes AI includes unescaped newlines inside strings
+      let jsonString = leadMatch[0];
+      jsonString = jsonString.replace(/\n/g, ' '); 
+      leadData = JSON.parse(jsonString).lead_capture;
+    } catch (parseErr) {
+      console.warn("JSON.parse failed for lead capture, falling back to regex extraction.");
+      // FALLBACK: Regex extraction if JSON.parse fails
+      const text = leadMatch[0];
+      const getField = (regex) => {
+        const m = text.match(regex);
+        return m ? m[1].trim() : null;
+      };
+      
+      leadData = {
+        name: getField(/"name"\s*:\s*"([^"]+)"/),
+        email: getField(/"email"\s*:\s*"([^"]+)"/),
+        mobile: getField(/"mobile"\s*:\s*"([^"]+)"/),
+        enquiry: getField(/"enquiry"\s*:\s*"([^"]+)"/),
+        status: getField(/"status"\s*:\s*"([^"]+)"/)
+      };
+    }
+
+    if (leadData && (leadData.status === 'complete' || (leadData.name && (leadData.email || leadData.mobile)))) {
+      // Update visitor as a lead
+      const visitor = await Visitor.findByPk(visitorId);
+      if (visitor) {
+        await visitor.update({
+          name: leadData.name || visitor.name,
+          email: leadData.email || visitor.email,
+          mobile: leadData.mobile || visitor.mobile,
+          is_lead: true
+        });
+
+        // Send email notification
+        await sendLeadEmail(leadData);
+      }
+    }
+      // Return content without the JSON block
+      return content.replace(leadMatch[0], '').trim();
+    }
+    return content;
+};
 
 exports.processChat = async (req, res) => {
   try {
@@ -111,10 +162,13 @@ exports.processChat = async (req, res) => {
       );
 
       // 5. SAVE BOT MESSAGE
+      // Process lead capture if present
+      const processedBotContent = await handleLeadCapture(responseContent, authId);
+
       const botMessage = await Message.create({
         conversation_id: conversation.id,
         sender_type: 'bot',
-        content: responseContent
+        content: processedBotContent
       });
 
       if (!isClosed) {
@@ -123,28 +177,20 @@ exports.processChat = async (req, res) => {
           conversation_id: conversation.id,
           title: conversation.title,
           userMessage,
-          botMessage
+          botMessage: { ...botMessage.toJSON(), content: processedBotContent } // Ensure stripped content is sent
         })}\n\n`);
         res.end();
       }
       return;
     }
 
-    // ================================
-    // 6. NORMAL MODE
-    // ================================
-    responseContent = await generateBotResponse(
-      conversation.Bot,
-      content,
-      conversation.Bot.faqs || [],
-      ragContext,
-      history
-    );
+    // Process lead capture if present
+    const processedBotContent = await handleLeadCapture(responseContent, authId);
 
     const botMessage = await Message.create({
       conversation_id: conversation.id,
       sender_type: 'bot',
-      content: responseContent
+      content: processedBotContent
     });
 
     return res.status(200).json({
