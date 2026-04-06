@@ -73,22 +73,22 @@ Follow these strict rules:
 
       // 4. Vector store search
       let searchContext = "";
-      if (bot.vector_store_id) {
-        try {
-          console.log("Vector store ID:", bot.vector_id);
-          const searchResult = await client.vectorStores.search("vs_69c663be52948191941de261a6970ed6", {
-            query: visitorMessage,
-            max_num_results: 5
-          });
-          searchContext = searchResult.data.map(r => {
-            return (r.content && Array.isArray(r.content))
-              ? r.content.map(c => c.text).join(" ")
-              : "";
-          }).join("\n\n---\n\n");
-        } catch (err) {
-          console.error("Vector search failed:", err);
-        }
+      //if (bot.vector_store_id) {
+      try {
+        console.log("Vector store ID:", bot.vector_id);
+        const searchResult = await client.vectorStores.search("vs_69c663be52948191941de261a6970ed6", {
+          query: visitorMessage,
+          max_num_results: 5
+        });
+        searchContext = searchResult.data.map(r => {
+          return (r.content && Array.isArray(r.content))
+            ? r.content.map(c => c.text).join(" ")
+            : "";
+        }).join("\n\n---\n\n");
+      } catch (err) {
+        console.error("Vector search failed:", err);
       }
+      //}
 
       if (searchContext) {
         agent.instructions += `\n\nAPPROVED DOCUMENT CONTENT:\n${searchContext}`;
