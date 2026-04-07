@@ -22,7 +22,7 @@ const sendLeadEmail = async (leadData) => {
       try {
         const formData = new FormData();
         formData.append('Email', email);
-        formData.append('Subject', `New Lead Captured: ${leadData.name || 'Anonymous'}`);
+        formData.append('Subject', `New Lead received from Website Chatbot (${leadData.name || 'Anonymous'})`);
         formData.append('Message', message);
 
         console.log('Sending email to:', email);
