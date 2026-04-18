@@ -80,8 +80,8 @@
   // Pass the current page URL to the iframe so the bot knows where the visitor is
   var currentUrl = encodeURIComponent(window.location.href);
   iframe.src = 'http://localhost:3000/widget/' + botId + '?url=' + currentUrl;
-  //iframe.src = 'https://chatbot-agent-frontend.vercel.app/widget/' + botId + '?url=' + currentUrl;
-  iframe.src = 'http://kalamiq.com:10001/widget/' + botId + '?url=' + currentUrl;
+  iframe.src = 'https://chatbot-agent-frontend.vercel.app/widget/' + botId + '?url=' + currentUrl;
+  //iframe.src = 'http://kalamiq.com:10001/widget/' + botId + '?url=' + currentUrl;
   
 
   iframe.style.width = '100%';
